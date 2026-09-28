@@ -1,4 +1,5 @@
-
+import com.project.dto.DietDTO;
+import com.project.dto.MemberDTO;
 import java.time.LocalDate; //뭔지 알아봐야 할 듯
 import java.util.UUID; //??
 // 사이트 -> 로그인(memberId,PW) -> 사이트(price) -> 카드결제 대행(paymentToken) -> 사이트(subscriptionId, autoRenew, nextBillingDate) -> 유저? 흐름 예상
