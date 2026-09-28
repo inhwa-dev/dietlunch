@@ -1,116 +1,97 @@
+import com.project.dto.DietDTO;
+import com.project.dto.MemberDTO;
+
+import java.util.*;
+
+/**
+ * 식단/상품 시스템 (위승현 담당)
+ * - DietDTO.dietType 값은 MemberDTO.targetGoal과 매칭되도록 "BULK" / "DIET" / "KEEP" 세 가지로 통일
+ * - 각 타입마다 도시락 메뉴 3개씩, 총 9개 등록
+ * - 회원(MemberDTO)의 targetGoal을 받아서 맞는 식단 목록을 추천
+ */
 public class MealPlanSystem {
 
-    // 식단 타입
-    enum DietType {
-        BULK_UP("벌크업"),
-        DIET("다이어트"),
-        MAINTAIN("유지");
+    // 식단 분류 상수 (MemberDTO.targetGoal과 동일한 문자열을 사용)
+    public static final String BULK = "BULK";
+    public static final String DIET = "DIET";
+    public static final String KEEP = "KEEP";
 
-        private final String label;
-
-        DietType(String label) {
-            this.label = label;
-        }
-
-        public String getLabel() {
-            return label;
-        }
-    }
-
-    // 도시락 메뉴 (상품)
-    static class Meal {
-        private String name;
-        private int kcal;
-        private int protein; // g
-        private int carbs; // 탄수화물 g
-        private int fat; // 지방 g
-        private int sodium; // 나트륨 mg
-        private int price; // 원
-
-        public Meal(String name, int kcal, int protein, int carbs, int fat, int sodium, int price) {
-            this.name = name;
-            this.kcal = kcal;
-            this.protein = protein;
-            this.carbs = carbs;
-            this.fat = fat;
-            this.sodium = sodium;
-            this.price = price;
-        }
-
-        @Override
-        public String toString() {
-            return String.format(
-                    "%-24s | %4dkcal | 탄%3dg 단%3dg 지%3dg | 나트륨%5dmg | %,d원",
-                    name, kcal, carbs, protein, fat, sodium, price);
-        }
-    }
+    // 가격은 9개 메뉴 평균값으로 통일
+    private static final int UNIFIED_PRICE = 8600;
 
     // 식단 타입 -> 메뉴 3개 매핑
-    private final Map<DietType, List<Meal>> mealsByType = new HashMap<>();
+    private final Map<String, List<DietDTO>> dietsByType = new LinkedHashMap<>();
 
     public MealPlanSystem() {
-        // 가격은 기존 9개 메뉴 평균값(8,600원)으로 통일
-        final int UNIFIED_PRICE = 8600;
-
-        // Meal(이름, 칼로리kcal, 단백질g, 탄수화물g, 지방g, 나트륨mg, 가격)
-        mealsByType.put(DietType.BULK_UP, Arrays.asList(
-                new Meal("닭가슴살 스테이크 도시락", 750, 55, 70, 20, 900, UNIFIED_PRICE), // 현미밥, 브로콜리, 고구마
-                new Meal("소불고기 덮밥", 820, 48, 90, 25, 1000, UNIFIED_PRICE), // 잡곡밥, 계란후라이, 나물반찬
-                new Meal("연어 스테이크 & 아보카도 샐러드", 780, 50, 55, 35, 750, UNIFIED_PRICE) // 퀴노아 포함
+        // DietDTO(dietId, dietName, totalCalories, protein, carbs, fat, dietType, price)
+        dietsByType.put(BULK, Arrays.asList(
+                new DietDTO("BULK-01", "닭가슴살 스테이크 도시락", 750, 55, 70, 20, BULK, UNIFIED_PRICE), // 현미밥, 브로콜리, 고구마
+                new DietDTO("BULK-02", "소불고기 덮밥", 820, 48, 90, 25, BULK, UNIFIED_PRICE), // 잡곡밥, 계란후라이, 나물반찬
+                new DietDTO("BULK-03", "연어 스테이크 & 아보카도 샐러드", 780, 50, 55, 35, BULK, UNIFIED_PRICE) // 퀴노아 포함
         ));
 
-        mealsByType.put(DietType.DIET, Arrays.asList(
-                new Meal("닭가슴살 샐러드 도시락", 380, 35, 25, 12, 600, UNIFIED_PRICE), // 방울토마토, 오이, 발사믹 드레싱
-                new Meal("두부 스테이크 & 채소볶음", 420, 28, 35, 15, 700, UNIFIED_PRICE), // 현미밥 소량
-                new Meal("오징어 초무침 & 곤약면", 350, 25, 30, 10, 850, UNIFIED_PRICE) // 저탄수 구성
+        dietsByType.put(DIET, Arrays.asList(
+                new DietDTO("DIET-01", "닭가슴살 샐러드 도시락", 380, 35, 25, 12, DIET, UNIFIED_PRICE), // 방울토마토, 오이, 발사믹 드레싱
+                new DietDTO("DIET-02", "두부 스테이크 & 채소볶음", 420, 28, 35, 15, DIET, UNIFIED_PRICE), // 현미밥 소량
+                new DietDTO("DIET-03", "오징어 초무침 & 곤약면", 350, 25, 30, 10, DIET, UNIFIED_PRICE) // 저탄수 구성
         ));
 
-        mealsByType.put(DietType.MAINTAIN, Arrays.asList(
-                new Meal("잡곡밥 & 제육볶음", 600, 32, 65, 20, 950, UNIFIED_PRICE), // 나물 반찬 3종
-                new Meal("닭갈비 도시락", 620, 38, 60, 22, 1050, UNIFIED_PRICE), // 현미밥, 김치, 계란찜
-                new Meal("비빔밥 스타일 도시락", 580, 30, 70, 15, 900, UNIFIED_PRICE) // 각종 나물, 고추장 소스, 계란후라이
+        dietsByType.put(KEEP, Arrays.asList(
+                new DietDTO("KEEP-01", "잡곡밥 & 제육볶음", 600, 32, 65, 20, KEEP, UNIFIED_PRICE), // 나물 반찬 3종
+                new DietDTO("KEEP-02", "닭갈비 도시락", 620, 38, 60, 22, KEEP, UNIFIED_PRICE), // 현미밥, 김치, 계란찜
+                new DietDTO("KEEP-03", "비빔밥 스타일 도시락", 580, 30, 70, 15, KEEP, UNIFIED_PRICE) // 각종 나물, 고추장 소스, 계란후라이
         ));
     }
 
     // 특정 식단 타입의 메뉴 3개 조회
-    public List<Meal> getMeals(DietType type) {
-        return mealsByType.get(type);
+    public List<DietDTO> getDiets(String dietType) {
+        List<DietDTO> diets = dietsByType.get(dietType);
+        if (diets == null) {
+            throw new IllegalArgumentException("존재하지 않는 dietType 입니다: " + dietType);
+        }
+        return diets;
     }
 
     // 식단 타입 + 메뉴 번호(1~3)로 선택
-    public Meal selectMeal(DietType type, int choice) {
-        List<Meal> meals = mealsByType.get(type);
-        if (choice < 1 || choice > meals.size()) {
-            throw new IllegalArgumentException("1~" + meals.size() + " 사이의 번호를 선택하세요.");
+    public DietDTO selectDiet(String dietType, int choice) {
+        List<DietDTO> diets = getDiets(dietType);
+        if (choice < 1 || choice > diets.size()) {
+            throw new IllegalArgumentException("1~" + diets.size() + " 사이의 번호를 선택하세요.");
         }
-        return meals.get(choice - 1);
+        return diets.get(choice - 1);
+    }
+
+    // 회원(MemberDTO)의 targetGoal에 맞는 식단 추천
+    // - dietType이 같은 메뉴들을 목표 칼로리(targetCalories)에 가까운 순으로 정렬해서 반환
+    public List<DietDTO> recommendForMember(MemberDTO member) {
+        List<DietDTO> candidates = new ArrayList<>(getDiets(member.getTargetGoal()));
+        candidates.sort(Comparator.comparingInt(
+                d -> Math.abs(d.getTotalCalories() - member.getTargetCalories())
+        ));
+        return candidates;
     }
 
     // 콘솔에서 테스트해보기 위한 메인
     public static void main(String[] args) {
         MealPlanSystem system = new MealPlanSystem();
-        Scanner sc = new Scanner(System.in);
 
-        System.out.println("식단을 선택하세요: 1.벌크업 2.다이어트 3.유지");
-        int typeInput = sc.nextInt();
-        DietType type = switch (typeInput) {
-            case 1 -> DietType.BULK_UP;
-            case 2 -> DietType.DIET;
-            case 3 -> DietType.MAINTAIN;
-            default -> throw new IllegalArgumentException("잘못된 입력입니다.");
-        };
+        // 예시 회원: 벌크업 목표, 목표 칼로리 800kcal
+        MemberDTO member = new MemberDTO("mhs01", 178.0, 68.0, MealPlanSystem.BULK, 800);
 
-        List<Meal> meals = system.getMeals(type);
-        System.out.println("\n[" + type.getLabel() + " 식단 메뉴]");
-        for (int i = 0; i < meals.size(); i++) {
-            System.out.println((i + 1) + ". " + meals.get(i));
+        System.out.println("회원 정보 -> " + member);
+
+        List<DietDTO> recommended = system.recommendForMember(member);
+        System.out.println("\n[" + member.getTargetGoal() + " 추천 식단 (목표 칼로리에 가까운 순)]");
+        for (int i = 0; i < recommended.size(); i++) {
+            System.out.println((i + 1) + ". " + recommended.get(i));
         }
 
-        System.out.print("\n메뉴 번호를 선택하세요 (1~3): ");
+        Scanner sc = new Scanner(System.in);
+        System.out.print("\n메뉴 번호를 선택하세요 (1~" + recommended.size() + "): ");
         int choice = sc.nextInt();
-        Meal selected = system.selectMeal(type, choice);
+        DietDTO selected = recommended.get(choice - 1);
 
         System.out.println("\n선택 완료 -> " + selected);
         sc.close();
     }
-}
+} 
