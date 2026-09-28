@@ -5,13 +5,12 @@ import java.util.*;
 
 /**
  * 식단/상품 시스템 (위승현 담당)
- * - DietDTO.dietType 값은 MemberDTO.targetGoal과 매칭되도록 "BULK" / "DIET" / "KEEP" 세 가지로 통일
  * - 각 타입마다 도시락 메뉴 3개씩, 총 9개 등록
  * - 회원(MemberDTO)의 targetGoal을 받아서 맞는 식단 목록을 추천
  */
 public class MealPlanSystem {
 
-    // 식단 분류 상수 (MemberDTO.targetGoal과 동일한 문자열을 사용)
+    // 식단 분류 상수 (\\\
     public static final String BULK = "BULK";
     public static final String DIET = "DIET";
     public static final String KEEP = "KEEP";
