@@ -15,15 +15,18 @@ public class Payment_Information {
 
     //====자동 결제용 함수? 날짜 확인 코드가 필요할듯?
     public void billing(Subscription subscription) {
+        PaymentGateway paymentGateway;//paymentGateway 여기서 임시로 사용할 클래스?
         //자동결제 확인
         if (!subscription.isAutoRenew()) {
             return;
         }
-
+        
         PaymentResult result =
+                //paymentGateway 18번째 줄을 초기화 해야함
                 paymentGateway.charge(
                         subscription.getPaymentToken(),
-                        subscription.getPrice()
+                        subscription.getPrice(),
+                        subscription
                 );
 
         if (result.isSuccess()) {
@@ -38,63 +41,18 @@ public class Payment_Information {
         }
     }
 }
-//아직 하지 못한 것 데이터베이스에서 정보를 가져와서 사용하는 코드 (json이던, sql이던)
-//결제 대행창 인터페이스(토큰, 가격)
-interface PaymentGateway {
-    public abstract PaymentResult charge(
-        String paymentToken, int price
-    );
-}
-//인터페이스 구현
-class Test1_Payment implements PaymentGateway{
-    @Override 
-    //PaymentGateway -> PaymentResult (String, int)데이터가 옮겨가야함, 카드대행사에서 데이터를 받아야함
-    public PaymentResult charge(String paymentToken, int price){
-        //대충 paymentToken = 카드대행사에서 받아온 토큰;
-        //대충 price = 카드사에서 받은 금액?// 코드;
-        return new PaymentResult(paymentToken, price);
-    }
-    
-}
-//PaymentResult class구현 필요, charge, isSuccess 메서드 구현 필요
-class PaymentResult{
-    String paymentToken;
-    int price;
-    //생성자
-    PaymentResult(String paymentToken,int price){
-        this.paymentToken = paymentToken; //charge 함수에서 받아온 (카드사에서 준 값일거임) 값일 경우가 대부분
-        this.price = price;
-    }
-    //charge로 받은 데이터를 isSuccess에서 판독용으로 사용해야 할듯
-    //미리 설정해둔 price보다 값이 큰지, 서버에서 가지고 있는 토큰과 지금 가지고 있는 토큰이 같은지 확인?
-    //if(paymentToken == Subscription sub.getPaymentToken and Subscription sub.getPrice() > price)
-    //ㄴ>이경우에는 isSuccess함수가 Subscription 객체를 받아야함?
-    //그냥 if()에다가 카드사에서 받은 정보와 현재 객체의 필드하고 비교?
-    public boolean isSuccess(){
-        int payPrice = 9900; //여기는 결제가격일듯
-        //여기서 Subscription 에서 가져온 값이랑 비교를 해야할 듯
-        if(paymentToken.equalsIgnoreCase()){
-            if(price < payPrice){ //결제가격확인
-                continue;
-            }
-            return true;
-        }else{
-            return false;
-        }
-    }
-}
 //결제에 필요한 정보
 class Subscription {
 
-    private Long memberId; //유저 아이디
+    private Long memberId; //유저 아이디 = memberDTO에서 가져오면됨
     private String subscriptionId; //구독 아이디, 초기값 = 널?
 
-    // 실제 카드번호가 아니라 PG에서 발급한 토큰, 초기값 = 널
+    // 실제 카드번호가 아니라 PG에서 발급한 토큰, 초기값 = 널, 결제가 한번 되면 이값을 받음
     private String paymentToken;
 
-    private int price; //가격, 초기값 = 널?
-    private boolean autoRenew; //자동 갱신 관련, 초기값 = 널?
-    private LocalDate nextBillingDate; //다음 결제 날짜, 초기값 = 널?
+    private int price; //가격, 초기값 = member DTO에서 가져오면 되나?
+    private boolean autoRenew; //자동 갱신 관련, 초기값 = 널?, 결제가 한번 되면 이값을 받음
+    private LocalDate nextBillingDate; //다음 결제 날짜, 초기값 = 널?, 결제가 한번 되면 이값을 받음
 
    // 생성자
     public Subscription(
@@ -128,23 +86,76 @@ class Subscription {
         return price; //가격 반환
     }
 }
+//아직 하지 못한 것 데이터베이스에서 정보를 가져와서 사용하는 코드 (json이던, sql이던)
+//결제 대행창 인터페이스(토큰, 가격)
+interface PaymentGateway {
+    public abstract PaymentResult charge(
+        String paymentToken, int price, Subscription subscription
+    );
+}
+//인터페이스 구현
+class Test1_Payment implements PaymentGateway{
+    @Override 
+    //PaymentGateway -> PaymentResult (String, int)데이터가 옮겨가야함, 카드대행사에서 데이터를 받아야함
+    public PaymentResult charge(String paymentToken, int price, Subscription subscription)
+    {
+        //대충 paymentToken = 카드대행사에서 받아온 토큰; //그냥 랜덤으로 직접부여할까?
+        //대충 price = 카드사에서 받은 금액? //데이터베이스에 미리 저장되어있는 price값을 집어넣게 만드는게 좋아보임
+        
+        return new PaymentResult(paymentToken, price, subscription);
+    }
+    
+}
+//PaymentResult class구현 필요, charge, isSuccess 메서드 구현 필요
+class PaymentResult{
+    String paymentToken;
+    int price;
+    Subscription subscription;
+    //생성자
+    PaymentResult(String paymentToken, int price, Subscription subscription){
+        this.paymentToken = paymentToken; //charge 함수에서 받아온 (카드사에서 준 값일거임) 값일 경우가 대부분
+        this.price = price;
+        this.subscription = subscription;
+    }
+    //charge로 받은 데이터를 isSuccess에서 판독용으로 사용해야 할듯
+    //미리 설정해둔 price보다 값이 큰지, 서버에서 가지고 있는 토큰과 지금 가지고 있는 토큰이 같은지 확인?
+    //if(paymentToken == Subscription sub.getPaymentToken and Subscription sub.getPrice() > price)
+    //ㄴ>이경우에는 isSuccess함수가 Subscription 객체를 받아야함?
+    //그냥 if()에다가 카드사에서 받은 정보와 현재 객체의 필드하고 비교?
+    public boolean isSuccess(){
+        
+        //여기서 Subscription 에서 가져온 값이랑 비교를 해야할 듯
+        if(paymentToken.equals(subscription.getPaymentToken())){
+            if(price < subscription.getPrice()){ //결제가격확인
+                return false;
+            }
+            return true;
+        }else{
+            return false;
+        }
+    }
+}
+
 //결제 서비스
 class SubscriptionService {
-
+    int price;
+    Subscription subscription;
     private final PaymentGateway paymentGateway; // 다른 곳에서 정의된 것임
     //생성자
-    public SubscriptionService(PaymentGateway paymentGateway) {
+    public SubscriptionService(PaymentGateway paymentGateway, Subscription subscription) {
         this.paymentGateway = paymentGateway;
+        this.subscription = subscription;
     }
     //결제시 사용하는 함수
     public Subscription subscribe(Long memberId,String paymentToken){
         //int price = 9900; //가격인듯
-
+        
         // 최초 결제용 함수
         PaymentResult result =
                 paymentGateway.charge(
                         paymentToken,
-                        price
+                        price,
+                        subscription
                 );
 
         if (!result.isSuccess()) {
