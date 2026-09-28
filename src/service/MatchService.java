@@ -2,43 +2,29 @@ package com.project.service;
 
 import com.project.dto.DietDTO;
 import com.project.dto.MemberDTO;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class MatchService {
 
-    /**
-     * 회원의 목표와 정보를 바탕으로 적절한 식단 리스트를 매칭하여 반환합니다.
-     * @param member 회원 정보 (키, 몸무게, 목표, 목표칼로리 등)
-     * @param allDiets DB에 등록된 전체 식단/도시락 리스트
-     * @return 조건에 부합하는 추천 식단 리스트
-     */
-    public List<DietDTO> getMatchingDiets(MemberDTO member, List<DietDTO> allDiets) {
-        List<DietDTO> recommendedDiets = new ArrayList<>();
-        
-        // 1. 회원의 목표(BULK, DIET, KEEP) 가져오기
-        String targetGoal = member.getTargetGoal();
-        
-        // 2. 회원의 목표 섭취 칼로리 가져오기 (허용 오차범위 세팅, 예: ±10%)
-        int targetCal = member.getTargetCalories();
-        int minCal = (int) (targetCal * 0.9);
-        int maxCal = (int) (targetCal * 1.1);
+    public List<DietDTO> getMatchingDiets(MemberDTO m, List<DietDTO> all) {
+        // for/if문 대신 Stream API로 조건 3가지를 한 번에 압축 필터링
+        return all.stream()
+            .filter(d -> d.getDietType().equalsIgnoreCase(m.getTargetGoal())) // 1. 목적 일치 (dietType == targetGoal)
+            .filter(d -> d.getTotalCalories() >= m.getTargetCalories() * 0.9 && d.getTotalCalories() <= m.getTargetCalories() * 1.1) // 2. 목표 칼로리 ±10%
+            .filter(d -> checkRatio(d, m.getTargetGoal())) // 3. 탄단지 비율 검증
+            .collect(Collectors.toList());
+    }
 
-        // 3. 전체 식단 리스트를 돌면서 조건에 맞는 도시락만 필터링
-        for (DietDTO diet : allDiets) {
-            
-            // 조건 A: 회원의 목적(벌크업/다이어트)과 도시락의 분류가 일치하는가?
-            boolean isGoalMatch = diet.getDietType().equals(targetGoal);
-            
-            // 조건 B: 도시락의 칼로리가 회원의 목표 칼로리 오차범위 내에 들어오는가?
-            boolean isCalorieMatch = diet.getTotalCalories() >= minCal && diet.getTotalCalories() <= maxCal;
-
-            // 두 조건을 모두 만족하면 추천 리스트에 추가
-            if (isGoalMatch && isCalorieMatch) {
-                recommendedDiets.add(diet);
-            }
-        }
+    private boolean checkRatio(DietDTO d, String goal) {
+        // 탄수화물(4kcal), 단백질(4kcal), 지방(9kcal) 총합 계산
+        double tot = (d.getCarbs() * 4) + (d.getProtein() * 4) + (d.getFat() * 9);
+        if (tot == 0) return false; // 데이터 오류 방지
         
-        return recommendedDiets;
+        double c = (d.getCarbs() * 4) / tot, p = (d.getProtein() * 4) / tot;
+
+        // if-else문을 삼항 연산자(? :)로 한 줄 최적화
+        return goal.equalsIgnoreCase("BULK") ? (c >= 0.45 && p >= 0.25) :
+               goal.equalsIgnoreCase("DIET") ? (p >= 0.40 && c <= 0.40) : true;
     }
 }
