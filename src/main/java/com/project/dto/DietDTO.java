@@ -10,4 +10,7 @@ public class DietDTO {
 
     // 기본 생성자, 모든 필드를 포함하는 생성자
     // Getter 및 Setter 메서드 필수
+    int getPrice(){
+        return price;
+    }
 }
