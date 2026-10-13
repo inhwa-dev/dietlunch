@@ -1,11 +1,19 @@
 package com.project.dto;
 
 public class MemberDTO {
+    private String password;
     private String memberId;      // 유저 고유 ID
     private double height;        // 키 (cm)
     private double weight;        // 몸무게 (kg)
     private String targetGoal;    // 목표 (예: "BULK", "DIET", "KEEP") 
     private int targetCalories;   // 목표 섭취 칼로리
+
+    public String getPassword() {
+    return password;
+    }
+    public void setPassword(String password) {
+    this.password = password;
+    }
     public String getMemberId() {
         return memberId;
     }
