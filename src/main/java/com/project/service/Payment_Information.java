@@ -17,7 +17,7 @@ public class Payment_Information {
     private static Set<String> subscribedMembers = new HashSet<>();
     private static Map<String, Subscription> subscriptions = new HashMap<>();
 
-    public static void startPayment(String memberId) {
+    public static void startPayment(String memberId, int payPrice) {
 
         if (subscribedMembers.contains(memberId)) {
             System.out.println("이미 구독 중인 회원입니다.");
@@ -28,15 +28,15 @@ public class Payment_Information {
 Scanner sc = new Scanner(System.in);
 int amountPrice = sc.nextInt();
 
-if (amountPrice < 8600) {
-    System.out.println("잔액이 부족합니다. 최소 8600원이 필요합니다.");
+if (amountPrice < payPrice) {
+    System.out.println("잔액이 부족합니다. 최소 " + payPrice + "원이 필요합니다.");
     return;
 }
         //여기에 실제로 데이터베이스의 정보를 읽는 기능이 있다면 코드가 따로 바뀌어야 하겠지.
         Subscription subscription = new Subscription(memberId, null, 0, null);
         subscription.setPrice(amountPrice);
 
-        Test1_Payment PaymentGate = new Test1_Payment();
+        Test1_Payment PaymentGate = new Test1_Payment(payPrice);
         SubscriptionService sub = new SubscriptionService(PaymentGate, subscription);
         if(subscription.getSubscriptionId() == null){
            subscription = sub.subscribe();
@@ -48,7 +48,7 @@ if (amountPrice < 8600) {
          subscriptions.put(memberId, subscription);
         System.out.println("\n===== 결제 완료 =====");
 System.out.println("회원 아이디: " + subscription.getMemberId());
-System.out.println("결제 금액: 8600원");
+System.out.println("결제 금액: " + payPrice + "원");
 System.out.println("남은 잔액: " + subscription.getPrice() + "원");
 System.out.println("다음 결제일: " + subscription.getNextBillingDate());
        
@@ -184,6 +184,10 @@ interface PaymentGateway {
 }
 //인터페이스 구현
 class Test1_Payment implements PaymentGateway{
+    int payPrice; //결제할 금액 (일수 x 3끼 x 8600)
+    Test1_Payment(int payPrice){
+        this.payPrice = payPrice;
+    }
     @Override 
     //PaymentGateway -> PaymentResult (String, int)데이터가 옮겨가야함, 카드대행사에서 데이터를 받아야함
     //여기 int price는 카드사에서 고객의 통장에서 결제된 금액을 보내주는 용도일까?
@@ -193,7 +197,7 @@ class Test1_Payment implements PaymentGateway{
     )
     {
         //MealPlanSystem에서 결정된 가격을 여기서 사용
-        int UNIFIED_PRICE = 8600;
+        int UNIFIED_PRICE = payPrice;
         if(price < UNIFIED_PRICE){
             throw new RuntimeException("결제 불가, 계좌금액 부족");
         }
@@ -206,7 +210,7 @@ class Test1_Payment implements PaymentGateway{
     //charge함수 두 종류로 overload해야할 듯 (토큰 = 이미 할당된 사람 있음, 가격 = 이미 확정된 사람있음, Subscription아무튼 넣어두기)
     public PaymentResult charge(Subscription subscription){
         //여기에 paymentToken, price이미 결정된 사람은 조작이 필요없다.
-        int UNIFIED_PRICE = 8600;
+        int UNIFIED_PRICE = payPrice;
         int price = subscription.getPrice();
         if(price < UNIFIED_PRICE){
             throw new RuntimeException("결제 불가, 계좌금액 부족");
@@ -239,7 +243,7 @@ class PaymentResult{
     //ㄴ>이경우에는 isSuccess함수가 Subscription 객체를 받아야함?
     //그냥 if()에다가 카드사에서 받은 정보와 현재 객체의 필드하고 비교?
     public boolean isSuccess() {
-    return price == 8600;
+    return price > 0;
 }
     //받아온 토큰 반환용 메서드
     //public String getPaymentToken(){

@@ -15,6 +15,7 @@ public class Main {
         MemberService service = new MemberService();
 
         while (true) {
+          try {
             System.out.println("\n1. 회원가입  2. 로그인  3. 종료");
             int menu = sc.nextInt();
 
@@ -29,6 +30,10 @@ public class Main {
                 double w = sc.nextDouble();
                 System.out.print("목표(BULK/DIET/KEEP): ");
                 String goal = sc.next().toUpperCase();
+                while (!goal.equals("BULK") && !goal.equals("DIET") && !goal.equals("KEEP")) {
+                    System.out.print("BULK, DIET, KEEP 중에 입력하세요: ");
+                    goal = sc.next().toUpperCase();
+                }
                 System.out.print("목표 칼로리: ");
                 int cal = sc.nextInt();
 
@@ -74,14 +79,15 @@ public class Main {
 
                     System.out.print("\n식단 스케줄을 생성할까요? (1. 예 / 2. 아니요): ");
 int answer = sc.nextInt();
+int days = 0;
 
 if (answer == 1) {
     MealScheduler scheduler = new MealScheduler(meals);
     System.out.print("며칠 동안의 식단을 만들까요?: ");
-    int days = sc.nextInt();
+    days = sc.nextInt();
 
     if (days > 0)
-        scheduler.printSchedule(scheduler.createSchedule(type, LocalDate.now(), days));
+        scheduler.printSchedule(scheduler.createSchedule(type, LocalDate.now(), days, member.getTargetCalories()));
     else
         System.out.println("1일 이상 입력하세요.");
 }
@@ -92,7 +98,10 @@ int payAnswer = sc.nextInt();
 
 
 if (payAnswer == 1) {
-    Payment_Information.startPayment(member.getMemberId());
+    if (days > 0)
+        Payment_Information.startPayment(member.getMemberId(), days * 3 * 8600); // 하루 3끼 x 일수
+    else
+        System.out.println("식단 스케줄을 먼저 생성해주세요.");
 }
 
                 } else {
@@ -103,6 +112,10 @@ if (payAnswer == 1) {
                 System.out.println("프로그램 종료");
                 break;
             }
+          } catch (InputMismatchException e) {
+            System.out.println("숫자를 입력해주세요.");
+            sc.nextLine();
+          }
         }
     }
 }

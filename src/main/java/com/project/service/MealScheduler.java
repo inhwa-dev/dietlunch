@@ -164,7 +164,8 @@ public class MealScheduler {
     public List<DailySchedule> createSchedule(
             MealPlanSystem.DietType dietType,
             LocalDate startDate,
-            int days) {
+            int days,
+            int targetCalories) {
 
         if (startDate == null) {
 
@@ -181,9 +182,9 @@ public class MealScheduler {
         }
 
 
-        // 선택한 목표의 식단 가져오기
+        // 목표 칼로리에 가장 가까운 3끼 고르기
         List<MealPlanSystem.Meal> meals =
-                mealPlanSystem.getMeals(dietType);
+                findBestMeals(dietType, targetCalories);
 
 
         if (meals == null || meals.size() < 3) {
@@ -254,6 +255,48 @@ public class MealScheduler {
 
 
         return schedules;
+    }
+
+    // 목표 칼로리에 가장 가까운 메뉴 3개 찾기
+    // 다이어트/벌크는 자기 메뉴 + 유지 메뉴에서, 유지는 전체 메뉴에서 고름
+    private List<MealPlanSystem.Meal> findBestMeals(
+            MealPlanSystem.DietType dietType,
+            int targetCalories) {
+
+        List<MealPlanSystem.Meal> pool =
+                new ArrayList<>(mealPlanSystem.getMeals(dietType));
+
+        if (dietType == MealPlanSystem.DietType.MAINTAIN) {
+            pool.addAll(mealPlanSystem.getMeals(MealPlanSystem.DietType.DIET));
+            pool.addAll(mealPlanSystem.getMeals(MealPlanSystem.DietType.BULK_UP));
+        } else {
+            pool.addAll(mealPlanSystem.getMeals(MealPlanSystem.DietType.MAINTAIN));
+        }
+
+        List<MealPlanSystem.Meal> best = null;
+        int bestDiff = Integer.MAX_VALUE;
+
+        // 메뉴 3개 조합을 전부 확인
+        for (int i = 0; i < pool.size(); i++) {
+            for (int j = i + 1; j < pool.size(); j++) {
+                for (int k = j + 1; k < pool.size(); k++) {
+
+                    int total = pool.get(i).getKcal()
+                            + pool.get(j).getKcal()
+                            + pool.get(k).getKcal();
+
+                    int diff = Math.abs(total - targetCalories);
+
+                    // 차이가 같으면 자기 식단 메뉴가 먼저 나온 조합 유지
+                    if (diff < bestDiff) {
+                        bestDiff = diff;
+                        best = List.of(pool.get(i), pool.get(j), pool.get(k));
+                    }
+                }
+            }
+        }
+
+        return best;
     }
 
     // 스케줄 출력

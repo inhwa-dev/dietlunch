@@ -24,7 +24,7 @@ public class MatchService {
         double c = (d.getCarbs() * 4) / tot, p = (d.getProtein() * 4) / tot;
 
         // if-else문을 삼항 연산자(? :)로 한 줄 최적화
-        return goal.equalsIgnoreCase("BULK") ? (c >= 0.45 && p >= 0.25) :
+        return goal.equalsIgnoreCase("BULK") ? (c >= 0.40 && p >= 0.20) :
                goal.equalsIgnoreCase("DIET") ? (p >= 0.40 && c <= 0.40) : true;
     }
 }

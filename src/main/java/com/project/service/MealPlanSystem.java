@@ -56,7 +56,7 @@ public int getSodium() { return sodium; }
         }
     }
 
-    // 식단 타입 -> 메뉴 3개 매핑
+    // 식단 타입 -> 메뉴 5개 매핑
     private final Map<DietType, List<Meal>> mealsByType = new HashMap<>();
 
     public MealPlanSystem() {
@@ -67,28 +67,34 @@ public int getSodium() { return sodium; }
         mealsByType.put(DietType.BULK_UP, Arrays.asList(
                 new Meal("닭가슴살 스테이크 도시락", 750, 55, 70, 20, 900, UNIFIED_PRICE), // 현미밥, 브로콜리, 고구마
                 new Meal("소불고기 덮밥", 820, 48, 90, 25, 1000, UNIFIED_PRICE), // 잡곡밥, 계란후라이, 나물반찬
-                new Meal("연어 스테이크 & 아보카도 샐러드", 780, 50, 55, 35, 750, UNIFIED_PRICE) // 퀴노아 포함
+                new Meal("연어 스테이크 & 아보카도 샐러드", 780, 50, 55, 35, 750, UNIFIED_PRICE), // 퀴노아 포함
+                new Meal("돼지고기 김치볶음밥 & 계란", 845, 45, 110, 25, 1100, UNIFIED_PRICE), // 계란후라이 2개, 단무지
+                new Meal("소고기 스테이크 & 구운 감자", 990, 60, 120, 30, 850, UNIFIED_PRICE) // 감자, 옥수수, 아스파라거스
         ));
 
         mealsByType.put(DietType.DIET, Arrays.asList(
-                new Meal("닭가슴살 샐러드 도시락", 380, 35, 25, 12, 600, UNIFIED_PRICE), // 방울토마토, 오이, 발사믹 드레싱
-                new Meal("두부 스테이크 & 채소볶음", 420, 28, 35, 15, 700, UNIFIED_PRICE), // 현미밥 소량
-                new Meal("오징어 초무침 & 곤약면", 350, 25, 30, 10, 850, UNIFIED_PRICE) // 저탄수 구성
+                new Meal("닭가슴살 샐러드 도시락", 495, 50, 40, 15, 600, UNIFIED_PRICE), // 방울토마토, 오이, 발사믹 드레싱
+                new Meal("두부 스테이크 & 채소볶음", 502, 52, 42, 14, 700, UNIFIED_PRICE), // 현미밥 소량
+                new Meal("오징어 초무침 & 곤약면", 460, 48, 40, 12, 850, UNIFIED_PRICE), // 저탄수 구성
+                new Meal("연어 포케 볼", 512, 52, 40, 16, 650, UNIFIED_PRICE), // 현미밥 소량, 양배추, 오이
+                new Meal("소고기 우둔살 & 구운 채소", 498, 55, 38, 14, 600, UNIFIED_PRICE) // 파프리카, 애호박, 버섯
         ));
 
         mealsByType.put(DietType.MAINTAIN, Arrays.asList(
                 new Meal("잡곡밥 & 제육볶음", 600, 32, 65, 20, 950, UNIFIED_PRICE), // 나물 반찬 3종
                 new Meal("닭갈비 도시락", 620, 38, 60, 22, 1050, UNIFIED_PRICE), // 현미밥, 김치, 계란찜
-                new Meal("비빔밥 스타일 도시락", 580, 30, 70, 15, 900, UNIFIED_PRICE) // 각종 나물, 고추장 소스, 계란후라이
+                new Meal("비빔밥 스타일 도시락", 580, 30, 70, 15, 900, UNIFIED_PRICE), // 각종 나물, 고추장 소스, 계란후라이
+                new Meal("고등어구이 정식", 600, 35, 70, 20, 1000, UNIFIED_PRICE), // 잡곡밥, 된장국, 김치
+                new Meal("치킨 데리야끼 덮밥", 615, 40, 80, 15, 950, UNIFIED_PRICE) // 양파, 브로콜리, 계란
         ));
     }
 
-    // 특정 식단 타입의 메뉴 3개 조회
+    // 특정 식단 타입의 메뉴 5개 조회
     public List<Meal> getMeals(DietType type) {
         return mealsByType.get(type);
     }
 
-    // 식단 타입 + 메뉴 번호(1~3)로 선택
+    // 식단 타입 + 메뉴 번호(1~5)로 선택
     public Meal selectMeal(DietType type, int choice) {
         List<Meal> meals = mealsByType.get(type);
         if (choice < 1 || choice > meals.size()) {
@@ -139,7 +145,7 @@ public List<DietDTO> getDietList() {
             System.out.println((i + 1) + ". " + meals.get(i));
         }
 
-        System.out.print("\n메뉴 번호를 선택하세요 (1~3): ");
+        System.out.print("\n메뉴 번호를 선택하세요 (1~" + meals.size() + "): ");
         int choice = sc.nextInt();
         Meal selected = system.selectMeal(type, choice);
 
