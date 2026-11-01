@@ -7,24 +7,43 @@ import java.util.stream.Collectors;
 
 public class MatchService {
 
-    public List<DietDTO> getMatchingDiets(MemberDTO m, List<DietDTO> all) {
-        // for/if문 대신 Stream API로 조건 3가지를 한 번에 압축 필터링
+    public List<DietDTO> getMatchingDiets(MemberDTO member, List<DietDTO> all) {
+        // 1차: 목표 / 끼니 기준 칼로리 / 탄단지 비율 모두 만족
+        List<DietDTO> matching = all.stream()
+            .filter(d -> d.getDietType().equalsIgnoreCase(member.getTargetGoal()))
+            .filter(d -> Math.abs(d.getTotalCalories() - member.getTargetCalories() / 3.0) <= 200)
+            .filter(d -> checkRatio(d, member.getTargetGoal()))
+            .collect(Collectors.toList());
+
+        if (!matching.isEmpty()) {
+            return matching;
+        }
+
+        // 2차: 입력된 목표에 맞는 상품이 있지만 영양비율 기준이 너무 엄격한 경우,
+        //      목표와 칼로리를 우선하여 추천이 완전히 비지 않도록 보완
+        matching = all.stream()
+            .filter(d -> d.getDietType().equalsIgnoreCase(member.getTargetGoal()))
+            .filter(d -> Math.abs(d.getTotalCalories() - member.getTargetCalories() / 3.0) <= 200)
+            .collect(Collectors.toList());
+
+        if (!matching.isEmpty()) {
+            return matching;
+        }
+
+        // 3차: 목표 칼로리가 상품 데이터의 범위를 벗어나면 동일 목표의 메뉴 제시
         return all.stream()
-            .filter(d -> d.getDietType().equalsIgnoreCase(m.getTargetGoal())) // 1. 목적 일치 (dietType == targetGoal)
-            .filter(d -> Math.abs(d.getTotalCalories() - m.getTargetCalories() / 3.0) <= 200)
-            .filter(d -> checkRatio(d, m.getTargetGoal())) // 3. 탄단지 비율 검증
+            .filter(d -> d.getDietType().equalsIgnoreCase(member.getTargetGoal()))
             .collect(Collectors.toList());
     }
 
     private boolean checkRatio(DietDTO d, String goal) {
-        // 탄수화물(4kcal), 단백질(4kcal), 지방(9kcal) 총합 계산
-        double tot = (d.getCarbs() * 4) + (d.getProtein() * 4) + (d.getFat() * 9);
-        if (tot == 0) return false; // 데이터 오류 방지
-        
-        double c = (d.getCarbs() * 4) / tot, p = (d.getProtein() * 4) / tot;
+        double total = (d.getCarbs() * 4.0) + (d.getProtein() * 4.0) + (d.getFat() * 9.0);
+        if (total <= 0) return false;
 
-        // if-else문을 삼항 연산자(? :)로 한 줄 최적화
-        return goal.equalsIgnoreCase("BULK") ? (c >= 0.45 && p >= 0.25) :
-               goal.equalsIgnoreCase("DIET") ? (p >= 0.40 && c <= 0.40) : true;
+        double carbRatio = (d.getCarbs() * 4.0) / total;
+        double proteinRatio = (d.getProtein() * 4.0) / total;
+
+        return goal.equalsIgnoreCase("BULK") ? (carbRatio >= 0.45 && proteinRatio >= 0.25) :
+               goal.equalsIgnoreCase("DIET") ? (proteinRatio >= 0.40 && carbRatio <= 0.40) : true;
     }
 }
