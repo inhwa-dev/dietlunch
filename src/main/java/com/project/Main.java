@@ -50,11 +50,14 @@ public class Main {
 
                     MealPlanSystem meals = new MealPlanSystem();
 
-                    DietType type = switch (member.getTargetGoal()) {
-                        case "BULK" -> DietType.BULK_UP;
-                        case "DIET" -> DietType.DIET;
-                        default -> DietType.MAINTAIN;
-                    };
+                    DietType type;
+                    if ("BULK".equals(member.getTargetGoal())) {
+                        type = DietType.BULK_UP;
+                    } else if ("DIET".equals(member.getTargetGoal())) {
+                        type = DietType.DIET;
+                    } else {
+                        type = DietType.MAINTAIN;
+                    }
 
                     MatchService match = new MatchService();
                     List<DietDTO> recommended =
