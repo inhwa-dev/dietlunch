@@ -102,11 +102,13 @@ public List<DietDTO> getDietList() {
     int id = 1;
 
     for (DietType type : DietType.values()) {
-        String goal = switch (type) {
-            case BULK_UP -> "BULK";
-            case DIET -> "DIET";
-            case MAINTAIN -> "KEEP";
-        };
+        String goal;
+        switch (type) {
+            case BULK_UP: goal = "BULK"; break;
+            case DIET: goal = "DIET"; break;
+            case MAINTAIN: goal = "KEEP"; break;
+            default: throw new IllegalArgumentException("Unknown diet type");
+        }
 
         for (Meal m : getMeals(type)) {
             list.add(new DietDTO(
@@ -126,12 +128,13 @@ public List<DietDTO> getDietList() {
 
         System.out.println("식단을 선택하세요: 1.벌크업 2.다이어트 3.유지");
         int typeInput = sc.nextInt();
-        DietType type = switch (typeInput) {
-            case 1 -> DietType.BULK_UP;
-            case 2 -> DietType.DIET;
-            case 3 -> DietType.MAINTAIN;
-            default -> throw new IllegalArgumentException("잘못된 입력입니다.");
-        };
+        DietType type;
+        switch (typeInput) {
+            case 1: type = DietType.BULK_UP; break;
+            case 2: type = DietType.DIET; break;
+            case 3: type = DietType.MAINTAIN; break;
+            default: throw new IllegalArgumentException("잘못된 입력입니다.");
+        }
 
         List<Meal> meals = system.getMeals(type);
         System.out.println("\n[" + type.getLabel() + " 식단 메뉴]");
