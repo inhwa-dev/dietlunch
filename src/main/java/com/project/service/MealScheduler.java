@@ -136,16 +136,16 @@ public class MealScheduler {
 
         private String getKoreanDay(DayOfWeek day) {
 
-            return switch (day) {
-
-                case MONDAY -> "월요일";
-                case TUESDAY -> "화요일";
-                case WEDNESDAY -> "수요일";
-                case THURSDAY -> "목요일";
-                case FRIDAY -> "금요일";
-                case SATURDAY -> "토요일";
-                case SUNDAY -> "일요일";
-            };
+            switch (day) {
+                case MONDAY: return "월요일";
+                case TUESDAY: return "화요일";
+                case WEDNESDAY: return "수요일";
+                case THURSDAY: return "목요일";
+                case FRIDAY: return "금요일";
+                case SATURDAY: return "토요일";
+                case SUNDAY: return "일요일";
+                default: throw new IllegalArgumentException("Unknown day");
+            }
         }
     }
 
