@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DietLunch | 발표용 오프라인 시연</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Malgun Gothic",sans-serif;color:#14221c;background:#f4f7f3}
+*{box-sizing:border-box}body{margin:0}header{background:#163e2b;color:white;padding:25px 6%}
+header h1{margin:0;font-size:30px}header p{margin:6px 0 0;color:#bfe0ce}
+main{max-width:1000px;margin:28px auto;padding:0 18px 50px}
+.notice{background:#fff8e5;border:1px solid #f1d58a;padding:13px 17px;border-radius:12px;line-height:1.6;margin-bottom:18px}
+.panel{background:white;border-radius:16px;padding:23px;margin:16px 0;box-shadow:0 3px 18px #133d2712}
+h2{font-size:20px;margin:0 0 17px}label{display:block;font-size:13px;font-weight:700;margin:12px 0 6px}
+input,select{width:100%;padding:12px;border:1px solid #cfdad2;border-radius:10px;background:white;font-size:15px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 20px}
+button{cursor:pointer;border:0;border-radius:10px;padding:12px 18px;font-size:15px;font-weight:700;background:#1f754b;color:white;margin-top:15px}
+button.secondary{background:#e5eee8;color:#234c35;margin-right:8px}button:hover{filter:brightness(.95)}
+.hidden{display:none}.status{padding:12px 14px;border-radius:10px;background:#e6f5eb;color:#1c5c36;margin-top:16px;white-space:pre-line}
+.error{background:#fff0ed;color:#a43526}.meal{display:flex;justify-content:space-between;gap:14px;border-bottom:1px solid #e2ebe4;padding:13px 0}
+.meal:last-child{border:0}.muted{color:#60766a;font-size:13px;margin-top:5px}
+.day{padding:14px 0;border-bottom:1px solid #e1ebe3}.day:last-child{border:0}
+.stat{display:inline-block;background:#e8f2ea;border-radius:999px;padding:5px 11px;font-size:13px;font-weight:700;margin:5px 5px 5px 0}
+@media(max-width:650px){.grid{grid-template-columns:1fr}.meal{display:block}header{padding:20px}}
+</style></head>
+<body>
+<header><h1>🥗 DietLunch</h1><p>목표에 맞춘 도시락 추천 · 식단 스케줄 · 테스트 결제</p></header>
+<main>
+<div class="notice"><strong>발표용 오프라인 웹 시연 화면</strong> — 자바 콘솔 프로젝트의 주요 기능과 데이터를 브라우저에서 재현한 별도 데모입니다. 실제 Java 프로그램이나 실결제를 실행하는 것은 아닙니다. 인터넷·JDK 설치 없이 열 수 있습니다.</div>
+<section class="panel" id="account">
+<h2>01 · 회원가입 / 로그인</h2>
+<div class="grid">
+<div><label for="id">아이디</label><input id="id" value="demo" autocomplete="off"></div>
+<div><label for="pw">비밀번호</label><input id="pw" type="password" value="1234"></div>
+<div><label for="height">키 (cm)</label><input id="height" type="number" value="175"></div>
+<div><label for="weight">몸무게 (kg)</label><input id="weight" type="number" value="70"></div>
+<div><label for="goal">목표</label><select id="goal"><option value="DIET">다이어트</option><option value="BULK">벌크업</option><option value="KEEP">유지</option></select></div>
+<div><label for="cal">하루 목표 칼로리</label><input id="cal" type="number" value="1500"></div>
+</div>
+<button onclick="signup()">회원가입</button> <button class="secondary" onclick="login()">로그인</button>
+<div class="status hidden" id="msg"></div>
+</section>
+<section class="panel hidden" id="recommend"><h2>02 · 맞춤 도시락 추천</h2><div id="summary"></div><div id="mealList"></div></section>
+<section class="panel hidden" id="scheduler"><h2>03 · 날짜별 식단 스케줄</h2><label for="days">며칠 동안 생성할까요?</label><input type="number" id="days" value="3" min="1" max="31"><button onclick="createSchedule()">스케줄 생성</button><div id="scheduleOutput"></div></section>
+<section class="panel hidden" id="payment"><h2>04 · 가상 결제</h2><p class="muted">실제 금전 거래가 없는 테스트 결제입니다. 도시락 가격은 8,600원입니다.</p><label for="balance">가상 계좌 잔액 (원)</label><input id="balance" type="number" value="20000" min="0"><button onclick="pay()">결제 시연</button><div id="payResult"></div></section>
+</main>
+<script>
+"use strict";
+const meals=[
+{name:"닭가슴살 스테이크 도시락",kcal:750,p:55,c:70,f:20,goal:"BULK"},
+{name:"소불고기 덮밥",kcal:820,p:48,c:90,f:25,goal:"BULK"},
+{name:"연어 스테이크 & 아보카도 샐러드",kcal:780,p:50,c:55,f:35,goal:"BULK"},
+{name:"닭가슴살 샐러드 도시락",kcal:380,p:35,c:25,f:12,goal:"DIET"},
+{name:"두부 스테이크 & 채소볶음",kcal:420,p:28,c:35,f:15,goal:"DIET"},
+{name:"오징어 초무침 & 곤약면",kcal:350,p:25,c:30,f:10,goal:"DIET"},
+{name:"잡곡밥 & 제육볶음",kcal:600,p:32,c:65,f:20,goal:"KEEP"},
+{name:"닭갈비 도시락",kcal:620,p:38,c:60,f:22,goal:"KEEP"},
+{name:"비빔밥 스타일 도시락",kcal:580,p:30,c:70,f:15,goal:"KEEP"}
+];const users=[],paid=new Set();let current=null;
+const el=id=>document.getElementById(id), get=id=>el(id).value.trim(), reveal=id=>el(id).classList.remove("hidden");
+function message(t,err=false){const m=el("msg");m.textContent=t;m.className="status"+(err?" error":"")}
+function signup(){
+const id=get("id"),pw=get("pw"),height=+get("height"),weight=+get("weight"),goal=get("goal"),cal=+get("cal");
+if(!id||!pw||height<=0||weight<=0||cal<=0){message("모든 입력값을 올바르게 입력해 주세요.",true);return}
+if(users.some(u=>u.id===id)){message("이미 존재하는 아이디입니다.",true);return}
+users.push({id,pw,height,weight,goal,cal});message("회원가입 성공! 이제 로그인 버튼을 눌러주세요.");
+}
+function login(){
+const u=users.find(x=>x.id===get("id")&&x.pw===get("pw"));
+if(!u){message("로그인 실패! 먼저 회원가입을 진행해 주세요.",true);return}
+current=u;message(u.id+"님 로그인 성공!");
+["recommend","scheduler","payment"].forEach(reveal);renderRecommendations();
+el("scheduleOutput").innerHTML="";el("payResult").innerHTML="";
+}
+function matchesRatio(m,goal){
+const tot=m.c*4+m.p*4+m.f*9,p=m.p*4/tot,c=m.c*4/tot;
+return goal==="BULK"?(c>=.45&&p>=.25):goal==="DIET"?(p>=.4&&c<=.4):true
+}
+function matches(){
+const byGoal=meals.filter(m=>m.goal===current.goal);
+const byCal=byGoal.filter(m=>Math.abs(m.kcal-current.cal/3)<=200);
+const strict=byCal.filter(m=>matchesRatio(m,current.goal));
+return strict.length?strict:byCal.length?byCal:byGoal
+}
+function renderRecommendations(){
+const list=matches(), labels={BULK:"벌크업",DIET:"다이어트",KEEP:"유지"};
+el("summary").textContent=current.id+"님의 목표: "+labels[current.goal]+" / 하루 "+current.cal+"kcal";
+el("mealList").innerHTML=list.map(m=>'<div class="meal"><div><strong>'+m.name+'</strong><div class="muted">탄수화물 '+m.c+'g · 단백질 '+m.p+'g · 지방 '+m.f+'g</div></div><strong>'+m.kcal+'kcal · 8,600원</strong></div>').join("");
+}
+function createSchedule(){
+if(!current)return;const days=+get("days");if(!Number.isInteger(days)||days<1||days>31){el("scheduleOutput").textContent="1~31일 사이를 입력해 주세요.";return}
+const byGoal=meals.filter(m=>m.goal===current.goal);
+const root=el("scheduleOutput");root.innerHTML="";
+for(let d=0;d<days;d++){
+const date=new Date();date.setDate(date.getDate()+d);
+const picks=[byGoal[d%3],byGoal[(d+1)%3],byGoal[(d+2)%3]];
+const div=document.createElement("div");div.className="day";
+const heading=document.createElement("strong");heading.textContent=date.toLocaleDateString("ko-KR")+" · "+(d+1)+"일차";div.appendChild(heading);
+const p=document.createElement("p");p.textContent="아침 "+picks[0].name+" / 점심 "+picks[1].name+" / 저녁 "+picks[2].name;div.appendChild(p);
+const stat=document.createElement("span");stat.className="stat";stat.textContent="총 "+picks.reduce((s,m)=>s+m.kcal,0)+" kcal";div.appendChild(stat);
+root.appendChild(div);
+}}
+function pay(){
+if(!current)return;const out=el("payResult");
+if(paid.has(current.id)){out.className="status error";out.textContent="이미 구독 중인 회원입니다.";return}
+const balance=+get("balance");
+if(!Number.isFinite(balance)||balance<8600){out.className="status error";out.textContent="잔액이 부족합니다. 최소 8,600원이 필요합니다.";return}
+paid.add(current.id);
+const date=new Date();date.setMonth(date.getMonth()+1);
+out.className="status";out.textContent="결제 완료!\n회원 아이디: "+current.id+"\n결제 금액: 8,600원\n남은 가상 잔액: "+(balance-8600).toLocaleString("ko-KR")+"원\n다음 결제일: "+date.toLocaleDateString("ko-KR");
+}
+</script></body></html>
